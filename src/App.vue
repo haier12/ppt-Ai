@@ -8,7 +8,7 @@ import {
   getProgress,
 } from "./util/request.js";
 import { text2Text, uploadDoc } from "./util/aichat.js";
-import CryptoJS from "crypto-js"
+import CryptoJS from "crypto-js";
 
 
 
