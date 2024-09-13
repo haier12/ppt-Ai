@@ -54,6 +54,17 @@ const createPPT = async (data) => {
     throw error;
   }
 };
+const createByOutline = async (data) => {
+  try {
+    const response = await instance.post("/parth/api/aippt/createByOutline", data);
+    console.log("createByOutline response:", response);
+
+    return response.data;
+  } catch (error) {
+    console.error("请求失败:", error);
+    throw error;
+  }
+};
 const getProgress = async (id) => {
   try {
     const response = await instance.get(`/parth/api/aippt/progress?sid=${id}`);
@@ -64,4 +75,4 @@ const getProgress = async (id) => {
   }
 };
 
-export { instance, createOutline, getBackGround, createPPT, getProgress };
+export { instance, createOutline, getBackGround, createPPT, getProgress, createByOutline };
