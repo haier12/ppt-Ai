@@ -1,5 +1,6 @@
 <script setup>
 import typewriter from "./typewriter.vue";
+import axios from "axios";
 import { ref, onMounted } from "vue";
 import {
   createOutline,
@@ -8,10 +9,8 @@ import {
   getProgress,
   createByOutline,
 } from "./util/request.js";
-import { text2Text, uploadDoc } from "./util/aichat.js";
-import CryptoJS from "crypto-js"
-
-
+import { text2Text, uploadDoc,chatByDoc } from "./util/aichat.js";
+import CryptoJS from "crypto-js";
 
 const outputText = ref("");
 
@@ -29,7 +28,7 @@ let modelDomain;
 
 const getOutline = () => {
   createOutline({
-    query: '桃花源', //str
+    query: "桃花源", //str
     author: "Aix平台",
     is_figure: true,
   }).then((res) => {
@@ -49,9 +48,9 @@ const parseTreeData = (data) => {
         label: chapter.chapterTitle,
         children: chapter.chapterContents
           ? chapter.chapterContents.map((content) => ({
-            id: content.id,
-            label: content.chapterTitle,
-          }))
+              id: content.id,
+              label: content.chapterTitle,
+            }))
           : [],
       })),
     },
@@ -95,17 +94,17 @@ const selectBackground = (id) => {
   });
 };
 const outlineData = ref({
-  query: '',
-  outline: ''}
-)
+  query: "",
+  outline: "",
+});
 
 //大纲直接生成ppt
 const outlineCreatePPT = () => {
   outlineData.value = {
     query: inputTheme.value,
-    outline: outputText.value
-  }
-  const jsonData = JSON.stringify(outlineData)
+    outline: outputText.value,
+  };
+  const jsonData = JSON.stringify(outlineData);
   createByOutline(jsonData).then((res) => {
     console.log(res, "正在生成中");
 
@@ -125,24 +124,24 @@ const outlineCreatePPT = () => {
     };
 
     checkProgress();
-  })
+  });
 };
 
 const conversation = ref([]);
 const result = ref([]);
 const inputData = ref([]);
 const inputTheme = ref(""); // 输入的主题
-const inputRequire = ref("") // 输入的需求
-const activeStep = ref(0);  // 上方进度条
-const fixRequire = ref("");  // 对话修改大纲
+const inputRequire = ref(""); // 输入的需求
+const activeStep = ref(0); // 上方进度条
+const fixRequire = ref(""); // 对话修改大纲
 
 const addMessage = () => {
   const themeValue = inputTheme.value;
   const requireValue = inputRequire.value;
-  const combinedString = `请帮我生成一个ppt大纲，主题为：${themeValue}。具体内容要求为：${requireValue}。注意，每个部分用大中小三个层级展示，如1.  1.1.2这种类型`
+  const combinedString = `请帮我生成一个ppt大纲，主题为：${themeValue}。具体内容要求为：${requireValue}。注意，每个部分用大中小三个层级展示，如1.  1.1.2这种类型`;
 
   connectWebSocket(combinedString);
-  activeStep.value = 1
+  activeStep.value = 1;
 };
 const addMessage1 = () => {
   const fixValue = fixRequire.value;
@@ -200,7 +199,7 @@ const uploadFile = async () => {
     console.error(error);
   }
 };
-let ttsWS
+let ttsWS;
 function connectWebSocket(data) {
   status.value = "ttsing";
   return getWebsocketUrl().then((url) => {
@@ -269,21 +268,49 @@ function webSocketSend(ws, data) {
 function result1(resultData) {
   let jsonData = JSON.parse(resultData);
   outputText.value += jsonData.payload.choices.text[0].content;
-  const div = document.querySelector('.paragraphs');
+  const div = document.querySelector(".paragraphs");
   if (div) {
     div.scrollTop = div.scrollHeight;
   }
   if (jsonData.payload && jsonData.payload.usage) {
-    activeStep.value = 2
+    activeStep.value = 2;
   }
   if (jsonData.header.code !== 0) {
     alert(`提问失败: ${jsonData.header.code}:${jsonData.header.message}`);
   }
 }
+const uploadAndAskMainContent = async () => {
+  try {
+    // Step 1: 上传文件 URL
+    // const formData = new FormData();
+    // formData.append(
+    //   "url",
+    //   "https://bjcdn.openstorage.cn/xinghuo/chatdocs/2024-09-13/dad35a4f-e7c1-4efc-b6df-cae763cb984b/39052b09-d154-419f-9832-20884adeb2f41726226211177.pdf"
+    // );
+    // formData.append("fileName", "test.pdf");
+    // formData.append("appId", "2ff2cc26");
+    // formData.append("secret", "YTMyZWFiOGVlYTc5ZGM5NGIwOTU3NWMx");
+    // // formData.append("fileType", "wiki");
+    // // formData.append("parseType", "AUTO");
+
+    // const uploadResp = await uploadDoc(formData);
+    // const fileId = uploadResp.data.data.fileId;
+    const fileId = '65314dc22ee242b2887f8f75ec36a169';
+    console.log("文件上传成功, 文件 ID:", fileId);
+
+    // Step 2: 询问文档主要内容
+    const question = "这份文档的主要内容是什么？";
+    chatByDoc(fileId,question);
+
+  } catch (error) {
+    console.error("上传或提问过程中发生错误:", error);
+  }
+};
 
 onMounted(() => {
-  connectWebSocket("");
-  getBackground();
+  // uploadAndAskMainContent();
+  // connectWebSocket("");
+  // getBackground();
 });
 </script>
 
@@ -337,7 +364,7 @@ onMounted(() => {
     </div>
   </div> -->
   <div class="ai-container">
-    <el-steps style="max-width:100% " :active="activeStep" align-center>
+    <el-steps style="max-width: 100%" :active="activeStep" align-center>
       <el-step title="开始创作" />
       <el-step title="输入主题" />
       <el-step title="编辑大纲" />
@@ -346,21 +373,49 @@ onMounted(() => {
     </el-steps>
     <div class="card-box">
       <el-card class="card1" v-if="activeStep == 0">
-        <el-tabs v-model="activeName" type="card" class="demo-tabs" @tab-click="handleClick">
+        <el-tabs
+          v-model="activeName"
+          type="card"
+          class="demo-tabs"
+          @tab-click="handleClick"
+        >
           <el-tab-pane label="输入主题与要求" name="first">
-            <div style="padding: 20px;">输入主题</div>
-            <textarea style="width:100vh" v-model="inputTheme" :rows="3" placeholder="在此输入您的PPT主题..."
-              @keydown.enter.exact.prevent="addMessage" @keydown.enter.shift.exact.prevent="inputTheme += '\n'">
-          </textarea>
-            <div style="padding: 20px;">具体生成要求</div>
-            <textarea style="width:100vh" v-model="inputRequire" :rows="3" placeholder="请输入对生成大纲的具体要求，比如要包含那些内容"
-              @keydown.enter.exact.prevent="addMessage" @keydown.enter.shift.exact.prevent="inputRequire += '\n'">
-          </textarea>
+            <div style="padding: 20px">输入主题</div>
+            <textarea
+              style="width: 100vh"
+              v-model="inputTheme"
+              :rows="3"
+              placeholder="在此输入您的PPT主题..."
+              @keydown.enter.exact.prevent="addMessage"
+              @keydown.enter.shift.exact.prevent="inputTheme += '\n'"
+            >
+            </textarea>
+            <div style="padding: 20px">具体生成要求</div>
+            <textarea
+              style="width: 100vh"
+              v-model="inputRequire"
+              :rows="3"
+              placeholder="请输入对生成大纲的具体要求，比如要包含那些内容"
+              @keydown.enter.exact.prevent="addMessage"
+              @keydown.enter.shift.exact.prevent="inputRequire += '\n'"
+            >
+            </textarea>
             <div>
-              <el-button style="padding:15px" type="primary" @click="addMessage">生成大纲→</el-button>
+              <el-button
+                style="padding: 15px"
+                type="primary"
+                @click="addMessage"
+                >生成大纲→</el-button
+              >
             </div>
           </el-tab-pane>
-          <el-tab-pane label="上传文件并解析" name="second">Config</el-tab-pane>
+          <el-tab-pane
+            @click="uploadAndAskMainContent"
+            label="上传文件并解析"
+            name="second"
+          >
+            Config
+          </el-tab-pane>
         </el-tabs>
       </el-card>
       <el-card class="card2" v-if="activeStep == 1">
@@ -369,10 +424,21 @@ onMounted(() => {
       <el-card class="card3" v-if="activeStep == 2">
         <div>主题：{{ inputTheme }}</div>
         <div class="paragraphs">{{ outputText }}</div>
-        <textarea style="width:100vh" v-model="fixRequire" :rows="3" placeholder="与AI对话，告诉AI您想如何修改"
-          @keydown.enter.exact.prevent="outlineCreatePPT" @keydown.enter.shift.exact.prevent="inputRequire += '\n'">
-          </textarea>
-        <el-button style="padding:15px" type="primary" @click="outlineCreatePPT">下一步→</el-button>
+        <textarea
+          style="width: 100vh"
+          v-model="fixRequire"
+          :rows="3"
+          placeholder="与AI对话，告诉AI您想如何修改"
+          @keydown.enter.exact.prevent="outlineCreatePPT"
+          @keydown.enter.shift.exact.prevent="inputRequire += '\n'"
+        >
+        </textarea>
+        <el-button
+          style="padding: 15px"
+          type="primary"
+          @click="outlineCreatePPT"
+          >下一步→</el-button
+        >
       </el-card>
     </div>
   </div>
@@ -383,7 +449,7 @@ onMounted(() => {
   height: 85vh;
   width: 140vh;
   background-color: #f5f6f7;
-  padding: 20px
+  padding: 20px;
 }
 
 .card-box {
