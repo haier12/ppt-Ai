@@ -281,7 +281,6 @@ function result1(resultData) {
 }
 const uploadAndAskMainContent = async () => {
   try {
-    // Step 1: 上传文件 URL
     // const formData = new FormData();
     // formData.append(
     //   "url",
@@ -298,7 +297,6 @@ const uploadAndAskMainContent = async () => {
     const fileId = '65314dc22ee242b2887f8f75ec36a169';
     console.log("文件上传成功, 文件 ID:", fileId);
 
-    // Step 2: 询问文档主要内容
     const question = "这份文档的主要内容是什么？";
     chatByDoc(fileId,question);
 
@@ -308,9 +306,8 @@ const uploadAndAskMainContent = async () => {
 };
 
 onMounted(() => {
-  // uploadAndAskMainContent();
-  // connectWebSocket("");
-  // getBackground();
+  connectWebSocket("");
+  getBackground();
 });
 </script>
 
