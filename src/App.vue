@@ -10,7 +10,7 @@ import {
 import { text2Text, uploadDoc } from "./util/aichat.js";
 import CryptoJS from "crypto-js";
 
-import axios from "axios";
+
 
 const outputText = ref("");
 
