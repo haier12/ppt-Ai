@@ -11,10 +11,10 @@ export default defineConfig({
         changeOrigin: true, // 改变请求的起源
         rewrite: (path) => path.replace(/^\/parth/, '') // 重写路径
       },
-      '/v1': {
-        target: 'https://spark-api-open.xf-yun.com',
-        changeOrigin: true,    
-      },
+      // '/v1': {
+      //   target: 'https://spark-api-open.xf-yun.com',
+      //   changeOrigin: true,    
+      // },
       '/openapi': {
         target: 'https://chatdoc.xfyun.cn',
         changeOrigin: true,    

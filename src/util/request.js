@@ -45,7 +45,7 @@ const getBackGround = async () => {
 };
 const createPPT = async (data) => {
   try {
-    const response = await instance.post("/parth/api/aippt/createBySid", data);
+    const response = await instance.post("/parth/api/aippt/create", data);
     console.log("createOutline response:", response);
 
     return response.data;
