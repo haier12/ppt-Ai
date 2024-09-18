@@ -11,8 +11,9 @@ import CryptoJS from "crypto-js"
 
 import { getSignature } from "./util/index.js";
 
-let appId = "2ff2cc26";
-let secret = "YTMyZWFiOGVlYTc5ZGM5NGIwOTU3NWMx";
+let appId = "01ec9aa3";
+let secret = "M2QxMDAxMjYyYTEzODMwMGRkZTQ4NmUy";
+let apikey = "39d05b269fa229f431a56c21794a8ea5"
 let timestamp = Math.floor(Date.now() / 1000);
 let signature = getSignature(appId, secret, timestamp);
 
@@ -54,6 +55,10 @@ const getBackground = () => {
     console.log(res);
     backGroundList.value = res.data;
   });
+};
+
+const getBackgroundColor = (key) => {
+  return outlineData.value.theme === key ? '#83e2b6' : '#f5f5f5';
 };
 
 const outlineData = ref({
@@ -119,6 +124,7 @@ const addMessage = () => {
 
 //修改大纲时和ai对话
 const fixOutline = () => {
+  outputText.value = '';
   firstArray.value = [];
   secondArray.value = [];
   extractedParts.value = []
@@ -221,8 +227,8 @@ function connectWebSocket(data) {
 
 function getWebsocketUrl() {
   return new Promise((resolve, reject) => {
-    var apiKey = "eaebcaf5da87a509b52f0f8931248403";
-    var apiSecret = "YTMyZWFiOGVlYTc5ZGM5NGIwOTU3NWMx";
+    var apiKey = apikey;
+    var apiSecret = secret;
     var url = "wss://spark-api.xf-yun.com/v4.0/chat";
 
     var host = "spark-api.xf-yun.com";
@@ -246,7 +252,7 @@ function getWebsocketUrl() {
 function webSocketSend(ws, data) {
   const params = {
     header: {
-      app_id: "2ff2cc26",
+      app_id: appId,
     },
     parameter: {
       chat: {
@@ -296,7 +302,9 @@ const allowedTypes = [
 const fileType = "wiki";
 const parseType = "AUTO";
 const upfileId = ref('');
+const docName = ref('')
 
+const docTheme = ref('')  // 文档生成ppt的主题
 const docRequire = ref('')  // 文档生成要求
 
 const onFileChange = (file) => {
@@ -309,6 +317,7 @@ const onFileChange = (file) => {
     console.error("文件过大");
     return;
   }
+  docName.value = file.raw.name
   selectedFile.value = file.raw;
   uploadFile();
 };
@@ -370,12 +379,13 @@ const askdoc = async (data) => {
 
 //文档对话
 function chatDoc() {
+  const docthemeValue = docTheme.value;
   const docrequireValue = docRequire.value;
   firstArray.value = []
   secondArray.value = []
   extractedParts.value = []
   stagOutputText.value = ''
-  const combinedString = `请帮我生成一个ppt大纲，主题和上传的文档有关。具体内容要求为：${docrequireValue}。注意，用三个等级大纲展示，如1. 1.1 1.1.2 2. 2.1这种类型，且按照这种顺序，不要有完全相同数字等级的大纲，不要有目录`
+  const combinedString = `请帮我生成一个ppt大纲，主题为：${docthemeValue}。具体内容要求为：${docrequireValue}。注意，用三个等级大纲展示，如1. 1.1 1.1.2 2. 2.1这种类型，且按照这种顺序，不要有完全相同数字等级的大纲，不要有目录`
   updateStagingData("user", combinedString);
   activeStep.value = 1
   uploadAndAskMainContent(stagingData.value);
@@ -458,6 +468,14 @@ const uploadAndAskMainContent = async (data) => {
 };
 const enableButton = ref(false);
 
+const chooseBackground = (data) => {
+  outlineData.value.theme = data
+}
+
+const changeCursor = (cursorStyle) => {
+  document.documentElement.style.cursor = cursorStyle;
+};
+
 onMounted(() => {
   connectWebSocket("");
   getBackground();
@@ -494,9 +512,16 @@ onMounted(() => {
               <el-button type="primary">点击上传并解析文件</el-button>
               <text>(支持 doc/docx、pdf、md、txt 格式文档,不超过 20M,不超过 100W 字符)</text>
             </el-upload>
+            <br/>
+            <div v-if="enableButton">{{docName}}文档已解析完毕</div>
+            <br/>
+            <div style="padding: 20px;">输入主题</div>
+            <textarea style="width:50vw" v-model="inputTheme" :rows="3" placeholder="在此输入您的PPT主题..."
+              @keydown.enter.shift.exact.prevent="inputTheme += '\n'">
+          </textarea>
+            <div style="padding: 20px;">具体生成要求</div>
             <textarea style="width:50vw; margin:20px" v-model="docRequire" :rows="3"
-              placeholder="请输入对生成大纲的具体要求，比如要包含那些内容" @keydown.enter.exact.prevent="chatDoc"
-              @keydown.enter.shift.exact.prevent="inputRequire += '\n'">
+              placeholder="请输入对生成大纲的具体要求，比如要包含那些内容" @keydown.enter.shift.exact.prevent="inputRequire += '\n'">
           </textarea>
             <div>
               <el-button style="padding:15px" type="primary" :disabled="!enableButton"
@@ -532,16 +557,15 @@ onMounted(() => {
       <el-card v-if="activeStep == 3">
         <div style="padding: 10px">ppt模板选择</div>
         <div class="themes">
-          <div v-for="item in backGroundList" :key="item.key" style="
-            padding: 20px;
-            padding-right: 30px;
-            padding-left: 30px;
-            margin: 10px;
-            background-color: #f5f5f5;
-            border-radius: 10px;
-            border-block: 10px solid #e6e6e6;
-          ">
-            <!-- @click="chooseBackground(item.key)" -->
+          <div v-for="item in backGroundList" :key="item.key" :style="{
+            padding: '20px',
+            paddingRight: '30px',
+            paddingLeft: '30px',
+            margin: '10px',
+            backgroundColor: getBackgroundColor(item.key),
+            borderRadius: '10px',
+            borderBlock: '10px solid #e6e6e6'
+          }" @click="chooseBackground(item.key)" @mouseenter="changeCursor('pointer')" @mouseleave="changeCursor('default')">
             {{ item.name }}
             <br />
             <img style="width: 150px; height: auto" :src="item.thumbnail" alt="" />
@@ -590,7 +614,7 @@ onMounted(() => {
 .ai-container {
   height: 85vh;
   width: 60vw;
-  background-color: #f5f6f7;
+  background-color: #f5f7f6;
   padding: 20px
 }
 
@@ -616,7 +640,7 @@ onMounted(() => {
 .themes {
   display: flex;
   flex-wrap: wrap;
-   max-height: 50vh;
+  max-height: 50vh;
   overflow-y: auto;
 }
 

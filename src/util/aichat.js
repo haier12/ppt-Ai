@@ -1,8 +1,8 @@
 import axios from "axios";
 import { getSignature } from "./index";
 
-let appId = "2ff2cc26";
-let secret = "YTMyZWFiOGVlYTc5ZGM5NGIwOTU3NWMx";
+let appId = "01ec9aa3";
+let secret = "M2QxMDAxMjYyYTEzODMwMGRkZTQ4NmUy";
 let timestamp = Math.floor(Date.now() / 1000);
 let signature = getSignature(appId, secret, timestamp);
 
